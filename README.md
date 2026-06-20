@@ -133,9 +133,12 @@ key** — you don't pay for their images:
 | `/api/convert` | POST (multipart: `file`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Image → pixel art |
 | `/api/background` | POST (form: `prompt`, `width`, `height`, `pixel_size`, `palette`, `colors`, `tileable`, `tile_div`) | Text → pixel-art background |
 
-Both image endpoints return JSON: `{ "size", "preview_png", "sprite_png" }`, where the
-two PNG fields are base64-encoded. `preview_png` is a large (512px) crisp upscale for
-display; `sprite_png` is the **true-size** grid (e.g. 32×32) for editing.
+The `/api/generate` and `/api/convert` endpoints return JSON:
+`{ "size", "preview_png", "sprite_png" }`, where the two PNG fields are base64-encoded.
+`preview_png` is a large (512px) crisp upscale for display; `sprite_png` is the
+**true-size** grid (e.g. 32×32) for editing. The `/api/background` endpoint returns
+`{ "width", "height", "background_png", "tile_png" }` (PNGs base64-encoded; `tile_png`
+is `null` unless a repeating tile was produced).
 
 ## Editing in a sprite editor (LibreSprite / Aseprite)
 
@@ -148,6 +151,30 @@ The result panel offers two downloads:
 
 The **File name** field auto-suggests a name from your prompt (or the uploaded file name)
 and is fully editable; it's used as the base for both downloads.
+
+## Backgrounds
+
+The **Background** tab generates a simple pixel-art background from a text prompt
+(e.g. `sewer with pipes and garbage`, `forest at dusk`, `night city skyline`) at a
+default of **1280×720**.
+
+Controls:
+
+- **Width / Height** — output size (256–3840 px).
+- **Pixel size** — how chunky each art "pixel" block is (Fine 4 → Blocky 16).
+- **Palette / Colors** — same retro palettes and color limiting as the other tabs.
+- **Seamless horizontal tiling** — makes the image repeat left-to-right with no visible
+  seam, so you can scroll or tile it horizontally in a game.
+- **Tile width** — when tiling, generate a smaller repeatable tile to reduce size:
+  - *Full width* — a unique, non-repeating scene that still tiles seamlessly.
+  - *Half (×2)* / *Quarter (×4)* — a narrower tile repeated across the width. You also
+    get a separate **seamless tile** download (e.g. `sewer_640x720.png`) to repeat in an
+    engine, which keeps the stored asset small.
+
+The result panel shows the full background plus, when applicable, a **Download seamless
+tile** button alongside **Download background**. Backgrounds are flat (no transparency)
+and best suited to simple, low-detail scenes — that's what the AI prompt is tuned for
+(no characters, no text, even left-to-right composition).
 
 ## Tests
 
