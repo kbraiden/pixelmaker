@@ -22,13 +22,9 @@
       <label>Subject
         <input type="text" id="prompt" placeholder="alligator" />
       </label>
-      <label>Your OpenAI API key
-        <input type="password" id="api_key" placeholder="sk-..." autocomplete="off" />
-      </label>
       <div class="keyrow">
-        <label class="check">
-          <input type="checkbox" id="remember_key" checked /> Remember on this device
-        </label>
+        <button type="button" id="open-key" class="secondary">Set API key</button>
+        <span id="key-status" class="key-status">No key set</span>
         <a href="/help.html" target="_blank" class="help-link">Need a key? Help &rarr;</a>
       </div>
       <p id="host-key-note" class="note hidden">
@@ -90,6 +86,28 @@
   <footer>
     <a href="/help.html">Help &amp; API key setup</a>
   </footer>
+
+  <dialog id="key-dialog">
+    <form id="key-form" method="dialog">
+      <h2>OpenAI API key</h2>
+      <p class="dialog-help">
+        Stored only in this browser and sent with each generate request. It is never
+        shown again after saving. <a href="/help.html" target="_blank">How to get a key &rarr;</a>
+      </p>
+      <label>API key
+        <input type="password" id="api_key" placeholder="sk-..." autocomplete="off" />
+      </label>
+      <label class="check">
+        <input type="checkbox" id="remember_key" checked /> Remember on this device
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="key-clear" class="secondary">Clear saved</button>
+        <span class="spacer"></span>
+        <button type="button" id="key-cancel" class="secondary">Cancel</button>
+        <button type="submit" id="key-save">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="/app.js"></script>
 </body>

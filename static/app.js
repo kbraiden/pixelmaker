@@ -81,31 +81,72 @@ function setFile(file) {
   }
 }
 
-// --- API key persistence ------------------------------------------------
+// --- API key handling (modal dialog) ------------------------------------
 const KEY_STORAGE = "pixelmaker_openai_key";
+let apiKey = localStorage.getItem(KEY_STORAGE) || "";
+let hostHasKey = false;
+
+const keyDialog = $("key-dialog");
 const keyInput = $("api_key");
 const rememberKey = $("remember_key");
 
-const savedKey = localStorage.getItem(KEY_STORAGE);
-if (savedKey) keyInput.value = savedKey;
-
-function persistKey() {
-  if (rememberKey.checked && keyInput.value.trim()) {
-    localStorage.setItem(KEY_STORAGE, keyInput.value.trim());
+function updateKeyStatus() {
+  const el = $("key-status");
+  if (apiKey) {
+    el.textContent = "Key saved \u2713";
+    el.className = "key-status ok";
+  } else if (hostHasKey) {
+    el.textContent = "Using host key";
+    el.className = "key-status host";
   } else {
-    localStorage.removeItem(KEY_STORAGE);
+    el.textContent = "No key set";
+    el.className = "key-status none";
   }
 }
-keyInput.addEventListener("change", persistKey);
-rememberKey.addEventListener("change", persistKey);
+updateKeyStatus();
+
+$("open-key").addEventListener("click", () => {
+  keyInput.value = ""; // never reveal a previously saved key
+  keyInput.placeholder = apiKey ? "Enter a new key to replace the saved one" : "sk-...";
+  rememberKey.checked = !!localStorage.getItem(KEY_STORAGE) || !apiKey;
+  keyDialog.showModal();
+});
+
+$("key-cancel").addEventListener("click", () => {
+  keyInput.value = "";
+  keyDialog.close();
+});
+
+$("key-save").addEventListener("click", () => {
+  const value = keyInput.value.trim();
+  if (value) {
+    apiKey = value;
+    if (rememberKey.checked) {
+      localStorage.setItem(KEY_STORAGE, value);
+    } else {
+      localStorage.removeItem(KEY_STORAGE);
+    }
+  }
+  keyInput.value = "";
+  updateKeyStatus();
+  keyDialog.close();
+});
+
+$("key-clear").addEventListener("click", () => {
+  apiKey = "";
+  localStorage.removeItem(KEY_STORAGE);
+  keyInput.value = "";
+  updateKeyStatus();
+  keyDialog.close();
+});
 
 // --- Health check: note if the host already supplies a key --------------
 fetch("/api/health")
   .then((r) => r.json())
   .then((info) => {
-    if (info.host_key) {
-      $("host-key-note").classList.remove("hidden");
-    }
+    hostHasKey = !!info.host_key;
+    if (hostHasKey) $("host-key-note").classList.remove("hidden");
+    updateKeyStatus();
   })
   .catch(() => {});
 
@@ -131,8 +172,7 @@ async function run() {
     const prompt = $("prompt").value.trim();
     if (!prompt) return setStatus("Enter a subject first.", true);
     form.append("prompt", prompt);
-    persistKey();
-    form.append("api_key", keyInput.value.trim());
+    form.append("api_key", apiKey);
     url = "/api/generate";
   } else {
     if (!selectedFile) return setStatus("Choose an image first.", true);
