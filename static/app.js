@@ -1,0 +1,136 @@
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+
+let currentTab = "text";
+let selectedFile = null;
+let spriteUrl = null;
+let previewUrl = null;
+
+// --- Tab switching -------------------------------------------------------
+document.querySelectorAll(".tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    currentTab = btn.dataset.tab;
+    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b === btn));
+    $("tab-text").classList.toggle("active", currentTab === "text");
+    $("tab-image").classList.toggle("active", currentTab === "image");
+    $("go").textContent = currentTab === "text" ? "Generate" : "Convert";
+  });
+});
+
+// --- File picking / drag-drop -------------------------------------------
+const dropzone = $("dropzone");
+const fileInput = $("file");
+
+dropzone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+
+["dragover", "dragenter"].forEach((ev) =>
+  dropzone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropzone.classList.add("dragover");
+  })
+);
+["dragleave", "drop"].forEach((ev) =>
+  dropzone.addEventListener(ev, (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+  })
+);
+dropzone.addEventListener("drop", (e) => {
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+
+function setFile(file) {
+  selectedFile = file || null;
+  $("file-label").textContent = file ? file.name : "Click or drop an image here";
+}
+
+// --- Health check: disable AI tab if no key -----------------------------
+fetch("/api/health")
+  .then((r) => r.json())
+  .then((info) => {
+    if (!info.ai_enabled) {
+      $("ai-warning").classList.remove("hidden");
+    }
+  })
+  .catch(() => {});
+
+// --- Generate / Convert --------------------------------------------------
+$("go").addEventListener("click", run);
+
+async function run() {
+  const size = $("size").value;
+  const palette = $("palette").value;
+  const colors = $("colors").value;
+
+  const form = new FormData();
+  form.append("size", size);
+  form.append("palette", palette);
+  form.append("colors", colors);
+
+  let url;
+  if (currentTab === "text") {
+    const prompt = $("prompt").value.trim();
+    if (!prompt) return setStatus("Enter a subject first.", true);
+    form.append("prompt", prompt);
+    url = "/api/generate";
+  } else {
+    if (!selectedFile) return setStatus("Choose an image first.", true);
+    form.append("file", selectedFile);
+    url = "/api/convert";
+  }
+
+  setBusy(true);
+  setStatus(currentTab === "text" ? "Generating pixel art..." : "Converting...");
+  try {
+    const resp = await fetch(url, { method: "POST", body: form });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || "Request failed");
+    }
+    const data = await resp.json();
+    showResult(data, size);
+    setStatus("Done.");
+  } catch (e) {
+    setStatus(e.message, true);
+  } finally {
+    setBusy(false);
+  }
+}
+
+function b64ToBlobUrl(b64) {
+  const bytes = atob(b64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return URL.createObjectURL(new Blob([arr], { type: "image/png" }));
+}
+
+function showResult(data, size) {
+  if (spriteUrl) URL.revokeObjectURL(spriteUrl);
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = b64ToBlobUrl(data.preview_png);
+  spriteUrl = b64ToBlobUrl(data.sprite_png);
+
+  $("output").src = previewUrl;
+
+  const spriteLink = $("download-sprite");
+  spriteLink.href = spriteUrl;
+  spriteLink.download = `pixelart_${data.size}x${data.size}.png`;
+
+  const previewLink = $("download-preview");
+  previewLink.href = previewUrl;
+  previewLink.download = "pixelart_512.png";
+
+  $("result").classList.remove("hidden");
+}
+
+function setStatus(msg, isError) {
+  const el = $("status");
+  el.textContent = msg;
+  el.style.color = isError ? "#ff6666" : "var(--accent2)";
+}
+
+function setBusy(busy) {
+  $("go").disabled = busy;
+}

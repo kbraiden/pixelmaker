@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelMaker</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>PIXELMAKER</h1>
+    <p class="tagline">turn words &amp; photos into retro pixel art</p>
+  </header>
+
+  <main>
+    <nav class="tabs">
+      <button class="tab active" data-tab="text">From text</button>
+      <button class="tab" data-tab="image">From image</button>
+    </nav>
+
+    <section id="tab-text" class="panel active">
+      <label>Subject
+        <input type="text" id="prompt" placeholder="alligator" />
+      </label>
+      <p id="ai-warning" class="warning hidden">
+        AI text mode is disabled (no API key configured). Set OPENAI_API_KEY in
+        your .env to enable it. The "From image" tab works without a key.
+      </p>
+    </section>
+
+    <section id="tab-image" class="panel">
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="file" accept="image/*" hidden />
+        <span id="file-label">Click or drop an image here</span>
+      </label>
+    </section>
+
+    <div class="controls">
+      <label>Size
+        <select id="size">
+          <option value="16">16 x 16</option>
+          <option value="32" selected>32 x 32</option>
+          <option value="64">64 x 64</option>
+          <option value="128">128 x 128</option>
+        </select>
+      </label>
+      <label>Palette
+        <select id="palette">
+          <option value="adaptive" selected>Adaptive</option>
+          <option value="nes">NES</option>
+          <option value="gameboy">Game Boy</option>
+          <option value="cga">CGA</option>
+          <option value="pico8">PICO-8</option>
+        </select>
+      </label>
+      <label>Colors
+        <input type="number" id="colors" min="2" max="256" value="16" />
+      </label>
+      <button id="go">Generate</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div id="result" class="result hidden">
+      <img id="output" alt="pixel art result" />
+      <div class="downloads">
+        <a id="download-sprite" download="pixelart.png">Download sprite (true size, for LibreSprite)</a>
+        <a id="download-preview" download="pixelart_512.png">Download large preview</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
