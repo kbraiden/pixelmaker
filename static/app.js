@@ -7,6 +7,7 @@ let selectedFile = null;
 let spriteUrl = null;
 let previewUrl = null;
 let filenameEdited = false;
+let lastSize = null;
 
 // --- Filename suggestion --------------------------------------------------
 const filenameInput = $("filename");
@@ -23,6 +24,7 @@ function slugify(text) {
 // Mark as user-overridden once they type their own name.
 filenameInput.addEventListener("input", () => {
   filenameEdited = filenameInput.value.trim().length > 0;
+  updateDownloadNames();
 });
 
 function suggestFilename(source) {
@@ -33,6 +35,15 @@ function suggestFilename(source) {
 
 function currentBaseName() {
   return slugify(filenameInput.value) || "pixelart";
+}
+
+// Keep the download links in sync with the filename field at any time, so
+// renaming after a result is shown updates the next download immediately.
+function updateDownloadNames() {
+  if (lastSize == null) return;
+  const base = currentBaseName();
+  $("download-sprite").download = `${base}_${lastSize}x${lastSize}.png`;
+  $("download-preview").download = `${base}_512.png`;
 }
 
 // --- Tab switching -------------------------------------------------------
@@ -213,14 +224,10 @@ function showResult(data, size) {
 
   $("output").src = previewUrl;
 
-  const base = currentBaseName();
-  const spriteLink = $("download-sprite");
-  spriteLink.href = spriteUrl;
-  spriteLink.download = `${base}_${data.size}x${data.size}.png`;
-
-  const previewLink = $("download-preview");
-  previewLink.href = previewUrl;
-  previewLink.download = `${base}_512.png`;
+  lastSize = data.size;
+  $("download-sprite").href = spriteUrl;
+  $("download-preview").href = previewUrl;
+  updateDownloadNames();
 
   $("result").classList.remove("hidden");
 }
