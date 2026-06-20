@@ -15,6 +15,15 @@ Two modes:
 - **From image** — upload a photo and convert it to pixel art entirely locally
   (downscale + palette quantization). No API key or network required.
 
+## Screenshots
+
+| Controls | Result |
+|----------|--------|
+| ![PixelMaker controls](docs/screenshot-controls.png) | ![Generated sprite with transparent background](docs/screenshot-result.png) |
+
+Generate from a word, pick size/palette/colors, get a transparent, frame-filling sprite
+plus a true-size download for LibreSprite/Aseprite.
+
 ## Quick start
 
 You need **Python 3.10+** ([download](https://www.python.org/downloads/)). Then:
