@@ -6,6 +6,34 @@ let currentTab = "text";
 let selectedFile = null;
 let spriteUrl = null;
 let previewUrl = null;
+let filenameEdited = false;
+
+// --- Filename suggestion --------------------------------------------------
+const filenameInput = $("filename");
+
+function slugify(text) {
+  return (text || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+// Mark as user-overridden once they type their own name.
+filenameInput.addEventListener("input", () => {
+  filenameEdited = filenameInput.value.trim().length > 0;
+});
+
+function suggestFilename(source) {
+  if (filenameEdited) return;
+  const slug = slugify(source);
+  if (slug) filenameInput.value = slug;
+}
+
+function currentBaseName() {
+  return slugify(filenameInput.value) || "pixelart";
+}
 
 // --- Tab switching -------------------------------------------------------
 document.querySelectorAll(".tab").forEach((btn) => {
@@ -17,6 +45,9 @@ document.querySelectorAll(".tab").forEach((btn) => {
     $("go").textContent = currentTab === "text" ? "Generate" : "Convert";
   });
 });
+
+// Suggest a filename from the prompt as the user types.
+$("prompt").addEventListener("input", (e) => suggestFilename(e.target.value));
 
 // --- File picking / drag-drop -------------------------------------------
 const dropzone = $("dropzone");
@@ -44,6 +75,10 @@ dropzone.addEventListener("drop", (e) => {
 function setFile(file) {
   selectedFile = file || null;
   $("file-label").textContent = file ? file.name : "Click or drop an image here";
+  if (file) {
+    const base = file.name.replace(/\.[^.]+$/, "");
+    suggestFilename(base);
+  }
 }
 
 // --- API key persistence ------------------------------------------------
@@ -138,13 +173,14 @@ function showResult(data, size) {
 
   $("output").src = previewUrl;
 
+  const base = currentBaseName();
   const spriteLink = $("download-sprite");
   spriteLink.href = spriteUrl;
-  spriteLink.download = `pixelart_${data.size}x${data.size}.png`;
+  spriteLink.download = `${base}_${data.size}x${data.size}.png`;
 
   const previewLink = $("download-preview");
   previewLink.href = previewUrl;
-  previewLink.download = "pixelart_512.png";
+  previewLink.download = `${base}_512.png`;
 
   $("result").classList.remove("hidden");
 }

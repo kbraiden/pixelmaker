@@ -84,10 +84,13 @@ display; `sprite_png` is the **true-size** grid (e.g. 32×32) for editing.
 
 The result panel offers two downloads:
 
-- **Download sprite (true size)** — the raw `size×size` PNG (e.g. `pixelart_32x32.png`).
+- **Download sprite (true size)** — the raw `size×size` PNG (e.g. `alligator_32x32.png`).
   Open this directly in **LibreSprite** or Aseprite; one image pixel maps to one editor
   pixel, so you can paint/edit cleanly. This is the file to keep working on.
 - **Download large preview** — the 512px upscaled PNG, handy for sharing or thumbnails.
+
+The **File name** field auto-suggests a name from your prompt (or the uploaded file name)
+and is fully editable; it's used as the base for both downloads.
 
 ## Tests
 

@@ -135,6 +135,8 @@ input[type="text"], input[type="number"], select {
 
 .check input { width: auto; margin: 0; }
 
+.controls .wide { grid-column: 1 / -1; margin: 0; }
+
 .keyrow {
   display: flex;
   justify-content: space-between;
