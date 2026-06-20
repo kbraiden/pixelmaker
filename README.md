@@ -35,13 +35,30 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-For the **From text** mode, copy `.env.example` to `.env` and set your key:
+For the **From text** mode, users supply their own OpenAI API key in the UI (stored only
+in their browser). Optionally, a host can configure a fallback key by copying
+`.env.example` to `.env` and setting:
 
 ```
 OPENAI_API_KEY=sk-...
 ```
 
-(Skip this for image-only use.)
+(Skip this for image-only use, or when each user brings their own key.)
+
+## Sharing with others
+
+This app is designed so you can share it and have **each person use their own OpenAI API
+key** — you don't pay for their images:
+
+- Run the server (see below) and share the URL.
+- Each user opens the **From text** tab and pastes their own `sk-...` key, which is saved
+  only in *their* browser (`localStorage`) and sent per-request to call OpenAI. It is never
+  stored on the server or logged.
+- The built-in **Help & API key setup** page (`/help.html`) walks them through creating a
+  key and adding billing.
+- If you set a host `OPENAI_API_KEY`, it is used only as a fallback when a user leaves the
+  key field blank. To force everyone to use their own key, leave the host key unset.
+- The **From image** tab needs no key at all.
 
 ## Run
 

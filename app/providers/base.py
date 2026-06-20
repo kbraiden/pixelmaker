@@ -24,18 +24,21 @@ class ImageProvider(ABC):
         raise NotImplementedError
 
 
-def get_provider() -> ImageProvider:
+def get_provider(api_key: str | None = None) -> ImageProvider:
     """Return the configured provider, or raise ProviderError if unavailable.
 
-    Selection is based on configuration; today only OpenAI is implemented, but
-    a local model could be wired in here without touching the API layer.
+    A per-request `api_key` (e.g. supplied by the end user in the UI) takes
+    precedence over any server-configured key, which lets the app be shared
+    without the host's key being used for everyone.
     """
     from ..config import settings
     from .openai_provider import OpenAIProvider
 
-    if not settings.ai_enabled:
+    key = api_key or settings.openai_api_key
+    if not key:
         raise ProviderError(
-            "AI text-to-image is not configured. Set OPENAI_API_KEY in your .env "
-            "to enable the 'From text' mode. Image upload conversion still works."
+            "No API key provided. Enter your own OpenAI API key in the app "
+            "(see the Help page), or have the host set OPENAI_API_KEY. "
+            "Image upload conversion still works without a key."
         )
-    return OpenAIProvider()
+    return OpenAIProvider(api_key=key)

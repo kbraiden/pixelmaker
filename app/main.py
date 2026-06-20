@@ -34,6 +34,7 @@ def health() -> JSONResponse:
         {
             "status": "ok",
             "ai_enabled": settings.ai_enabled,
+            "host_key": settings.ai_enabled,
             "sizes": list(VALID_SIZES),
             "palettes": palette_names(),
         }
@@ -59,13 +60,14 @@ def generate(
     colors: int = Form(16),
     remove_bg: bool = Form(True),
     fill: bool = Form(True),
+    api_key: str = Form(""),
 ) -> JSONResponse:
     """Text -> pixel art via the configured AI provider."""
     _validate_params(size, palette, colors)
     if not prompt.strip():
         raise HTTPException(400, "prompt must not be empty")
     try:
-        provider = get_provider()
+        provider = get_provider(api_key.strip() or None)
         source = provider.generate(prompt)
     except ProviderError as exc:
         raise HTTPException(503, str(exc)) from exc

@@ -135,6 +135,61 @@ input[type="text"], input[type="number"], select {
 
 .check input { width: auto; margin: 0; }
 
+.keyrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.help-link {
+  color: var(--accent2);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.help-link:hover { text-decoration: underline; }
+
+.note { color: #9bd07f; font-size: 0.82rem; margin: 0 0 0.6rem; }
+
+footer {
+  margin: 1.5rem 0 2.5rem;
+  text-align: center;
+}
+
+footer a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+footer a:hover { color: var(--accent2); text-decoration: underline; }
+
+.prose {
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.prose h2 {
+  color: var(--accent);
+  font-size: 1.15rem;
+  margin-top: 1.6rem;
+}
+
+.prose a { color: var(--accent2); }
+.prose code {
+  background: var(--bg);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  font-size: 0.9em;
+}
+
+.prose ol, .prose ul { padding-left: 1.3rem; }
+.prose .back { margin-top: 2rem; }
+
 #output {
   width: 100%;
   max-width: 384px;

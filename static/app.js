@@ -46,12 +46,30 @@ function setFile(file) {
   $("file-label").textContent = file ? file.name : "Click or drop an image here";
 }
 
-// --- Health check: disable AI tab if no key -----------------------------
+// --- API key persistence ------------------------------------------------
+const KEY_STORAGE = "pixelmaker_openai_key";
+const keyInput = $("api_key");
+const rememberKey = $("remember_key");
+
+const savedKey = localStorage.getItem(KEY_STORAGE);
+if (savedKey) keyInput.value = savedKey;
+
+function persistKey() {
+  if (rememberKey.checked && keyInput.value.trim()) {
+    localStorage.setItem(KEY_STORAGE, keyInput.value.trim());
+  } else {
+    localStorage.removeItem(KEY_STORAGE);
+  }
+}
+keyInput.addEventListener("change", persistKey);
+rememberKey.addEventListener("change", persistKey);
+
+// --- Health check: note if the host already supplies a key --------------
 fetch("/api/health")
   .then((r) => r.json())
   .then((info) => {
-    if (!info.ai_enabled) {
-      $("ai-warning").classList.remove("hidden");
+    if (info.host_key) {
+      $("host-key-note").classList.remove("hidden");
     }
   })
   .catch(() => {});
@@ -78,6 +96,8 @@ async function run() {
     const prompt = $("prompt").value.trim();
     if (!prompt) return setStatus("Enter a subject first.", true);
     form.append("prompt", prompt);
+    persistKey();
+    form.append("api_key", keyInput.value.trim());
     url = "/api/generate";
   } else {
     if (!selectedFile) return setStatus("Choose an image first.", true);

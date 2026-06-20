@@ -22,9 +22,17 @@
       <label>Subject
         <input type="text" id="prompt" placeholder="alligator" />
       </label>
-      <p id="ai-warning" class="warning hidden">
-        AI text mode is disabled (no API key configured). Set OPENAI_API_KEY in
-        your .env to enable it. The "From image" tab works without a key.
+      <label>Your OpenAI API key
+        <input type="password" id="api_key" placeholder="sk-..." autocomplete="off" />
+      </label>
+      <div class="keyrow">
+        <label class="check">
+          <input type="checkbox" id="remember_key" checked /> Remember on this device
+        </label>
+        <a href="/help.html" target="_blank" class="help-link">Need a key? Help &rarr;</a>
+      </div>
+      <p id="host-key-note" class="note hidden">
+        A key is already configured by the host &mdash; you can leave this blank.
       </p>
     </section>
 
@@ -75,6 +83,10 @@
       </div>
     </div>
   </main>
+
+  <footer>
+    <a href="/help.html">Help &amp; API key setup</a>
+  </footer>
 
   <script src="/app.js"></script>
 </body>

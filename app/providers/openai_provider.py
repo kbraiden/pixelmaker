@@ -19,16 +19,17 @@ _PROMPT_TEMPLATE = (
 class OpenAIProvider(ImageProvider):
     name = "openai"
 
-    def __init__(self) -> None:
-        if not settings.ai_enabled:
-            raise ProviderError("OPENAI_API_KEY is not set.")
+    def __init__(self, api_key: str | None = None) -> None:
+        key = api_key or settings.openai_api_key
+        if not key:
+            raise ProviderError("No OpenAI API key provided.")
         try:
             from openai import OpenAI
         except ImportError as exc:  # pragma: no cover - import guard
             raise ProviderError(
                 "The 'openai' package is not installed. Run 'pip install openai'."
             ) from exc
-        self._client = OpenAI(api_key=settings.openai_api_key)
+        self._client = OpenAI(api_key=key)
         self._model = settings.openai_image_model
 
     def generate(self, prompt: str, size: int = 512) -> bytes:

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixelMaker — Help</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>HELP</h1>
+    <p class="tagline">using your own OpenAI API key</p>
+  </header>
+
+  <main class="prose">
+    <p>
+      The <strong>From text</strong> feature turns a word into pixel art using
+      OpenAI's image model. Each person uses <strong>their own</strong> API key, so
+      you only ever pay for images you generate. The <strong>From image</strong>
+      feature (converting an uploaded photo) needs <em>no</em> key at all.
+    </p>
+
+    <h2>1. Create an OpenAI account</h2>
+    <p>
+      Go to <a href="https://platform.openai.com/signup" target="_blank" rel="noopener">platform.openai.com/signup</a>
+      and sign up (or log in if you already have an account).
+    </p>
+
+    <h2>2. Add billing</h2>
+    <p>
+      Image generation is a paid API. Open
+      <a href="https://platform.openai.com/account/billing" target="_blank" rel="noopener">Billing</a>
+      and add a payment method / credit. Images are inexpensive — typically a few
+      cents each — and you can set a monthly spend limit to stay in control.
+    </p>
+
+    <h2>3. Create an API key</h2>
+    <ol>
+      <li>Open <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">platform.openai.com/api-keys</a>.</li>
+      <li>Click <strong>Create new secret key</strong>.</li>
+      <li>Copy the key — it starts with <code>sk-</code>. You won't be able to see it again,
+        so paste it somewhere safe.</li>
+    </ol>
+
+    <h2>4. Paste it into PixelMaker</h2>
+    <p>
+      Back on the <a href="/">main page</a>, open the <strong>From text</strong> tab and paste
+      your key into the <strong>Your OpenAI API key</strong> box. Leave
+      <strong>Remember on this device</strong> checked to avoid re-entering it next time,
+      then type a subject (e.g. <code>alligator</code>) and click <strong>Generate</strong>.
+    </p>
+
+    <h2>Where is my key stored?</h2>
+    <p>
+      If you tick <strong>Remember on this device</strong>, the key is saved only in your
+      own browser (via <code>localStorage</code>) — it is not stored on the server. When you
+      generate, the key is sent with that single request to this app's backend, which uses
+      it to call OpenAI and then discards it. It is never logged or shared. To remove a
+      saved key, clear the box (or untick the remember option) and generate once, or clear
+      your browser site data.
+    </p>
+
+    <h2>Troubleshooting</h2>
+    <ul>
+      <li><strong>"No API key provided"</strong> — paste your <code>sk-...</code> key into the key box.</li>
+      <li><strong>"Image generation failed: ... 401"</strong> — the key is wrong or revoked; create a new one.</li>
+      <li><strong>"... 429 / insufficient_quota"</strong> — add billing/credit to your OpenAI account.</li>
+      <li><strong>Nothing happens</strong> — the image tab still works without a key; check your connection for the text tab.</li>
+    </ul>
+
+    <p class="back"><a href="/">&larr; Back to PixelMaker</a></p>
+  </main>
+</body>
+</html>
