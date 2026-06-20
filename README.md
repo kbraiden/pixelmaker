@@ -2,6 +2,12 @@
 
 Turn words and photos into retro, old-video-game-style pixel art PNGs.
 
+> [!WARNING]
+> **Unsupported project.** This is a personal hobby project provided **as-is**, with
+> **no support, warranty, or guarantee of maintenance**. It may change or break at any
+> time. Use at your own risk. Issues and pull requests may go unanswered. You are
+> responsible for your own OpenAI API usage and any costs it incurs.
+
 Two modes:
 
 - **From text** — type a subject (e.g. `alligator`) and an AI image model generates
@@ -148,3 +154,10 @@ Tests cover the pixelation engine and palettes offline (no network/AI).
 ## License
 
 Released under the [MIT License](LICENSE).
+
+## Disclaimer
+
+This project is **not supported**. It is provided as-is for personal/educational use with
+no warranty or guarantee of maintenance (see the warning at the top and the MIT license).
+You are solely responsible for your use of any third-party APIs (e.g. OpenAI) and any
+associated costs.
