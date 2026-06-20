@@ -193,11 +193,14 @@ Tests cover the pixelation engine and palettes offline (no network/AI).
 
 ## License
 
-Released under the [MIT License](LICENSE).
+Released under the [PolyForm Noncommercial License 1.0.0](LICENSE). **Commercial use is
+not permitted.** You may use, modify, and share the software for any noncommercial
+purpose (personal projects, hobby, research, education, etc.). For commercial licensing,
+contact the author.
 
 ## Disclaimer
 
-This project is **not supported**. It is provided as-is for personal/educational use with
-no warranty or guarantee of maintenance (see the warning at the top and the MIT license).
-You are solely responsible for your use of any third-party APIs (e.g. OpenAI) and any
-associated costs.
+This project is **not supported**. It is provided as-is for personal/noncommercial use
+with no warranty or guarantee of maintenance (see the warning at the top and the
+[license](LICENSE)). You are solely responsible for your use of any third-party APIs
+(e.g. OpenAI) and any associated costs.
