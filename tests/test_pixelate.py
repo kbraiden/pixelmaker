@@ -1,10 +1,11 @@
 """Tests for the pixelation engine."""
 import io
 
+import numpy as np
 import pytest
 from PIL import Image
 
-from app.pixelate import VALID_SIZES, pixelate
+from app.pixelate import VALID_SIZES, make_background, pixelate
 
 
 def _make_image(w=200, h=200, color=(120, 60, 200)) -> bytes:
@@ -93,3 +94,52 @@ def test_no_bg_removal_is_opaque_rgb():
     _, grid = pixelate(_make_image(), size=32, remove_bg=False, fill=False)
     grid_img = Image.open(io.BytesIO(grid))
     assert grid_img.mode == "RGB"
+
+
+def _gradient_image(w=400, h=300) -> bytes:
+    """A horizontal color gradient so left and right edges differ strongly."""
+    arr = np.zeros((h, w, 3), dtype=np.uint8)
+    for x in range(w):
+        arr[:, x] = (int(255 * x / (w - 1)), 80, 255 - int(255 * x / (w - 1)))
+    buf = io.BytesIO()
+    Image.fromarray(arr, "RGB").save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def test_background_dimensions_and_no_tile_when_full():
+    bg, tile = make_background(
+        _gradient_image(), width=640, height=360, pixel_size=8,
+        tileable=True, tile_div=1,
+    )
+    bg_img = Image.open(io.BytesIO(bg))
+    assert bg_img.size == (640, 360)
+    assert tile is None  # full-width unique -> no separate tile
+
+
+def test_background_tile_returned_and_sized_when_divided():
+    bg, tile = make_background(
+        _gradient_image(), width=640, height=360, pixel_size=8,
+        tileable=True, tile_div=2,
+    )
+    assert Image.open(io.BytesIO(bg)).size == (640, 360)
+    assert tile is not None
+    assert Image.open(io.BytesIO(tile)).size == (320, 360)
+
+
+def test_background_horizontally_seamless():
+    bg, _ = make_background(
+        _gradient_image(), width=640, height=360, pixel_size=8,
+        tileable=True, tile_div=1, colors=64,
+    )
+    arr = np.asarray(Image.open(io.BytesIO(bg)).convert("RGB")).astype(int)
+    # When tiled, the right edge sits next to the left edge: they must match closely.
+    edge_diff = np.abs(arr[:, 0] - arr[:, -1]).mean()
+    assert edge_diff < 24, f"seam too large: {edge_diff}"
+
+
+def test_background_not_seamless_skips_healing():
+    bg, tile = make_background(
+        _gradient_image(), width=512, height=288, pixel_size=8, tileable=False,
+    )
+    assert Image.open(io.BytesIO(bg)).size == (512, 288)
+    assert tile is None

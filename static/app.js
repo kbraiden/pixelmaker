@@ -4,10 +4,8 @@ const $ = (id) => document.getElementById(id);
 
 let currentTab = "text";
 let selectedFile = null;
-let spriteUrl = null;
-let previewUrl = null;
 let filenameEdited = false;
-let lastSize = null;
+let currentOutputs = []; // [{ url, getLabel(), getName(base) }]
 
 // --- Filename suggestion --------------------------------------------------
 const filenameInput = $("filename");
@@ -40,25 +38,37 @@ function currentBaseName() {
 // Keep the download links in sync with the filename field at any time, so
 // renaming after a result is shown updates the next download immediately.
 function updateDownloadNames() {
-  if (lastSize == null) return;
   const base = currentBaseName();
-  $("download-sprite").download = `${base}_${lastSize}x${lastSize}.png`;
-  $("download-preview").download = `${base}_512.png`;
+  ["download-a", "download-b"].forEach((id, i) => {
+    if (i < currentOutputs.length) $(id).download = currentOutputs[i].getName(base);
+  });
 }
 
 // --- Tab switching -------------------------------------------------------
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll(".tab").forEach((b) =>
+    b.classList.toggle("active", b.dataset.tab === tab)
+  );
+  $("tab-text").classList.toggle("active", tab === "text");
+  $("tab-image").classList.toggle("active", tab === "image");
+  $("tab-background").classList.toggle("active", tab === "background");
+
+  const isBackground = tab === "background";
+  $("sprite-controls").classList.toggle("hidden", isBackground);
+  $("bg-controls").classList.toggle("hidden", !isBackground);
+  $("ai-key-row").classList.toggle("hidden", tab === "image");
+  $("host-key-note").classList.toggle("hidden", tab === "image" || !hostHasKey);
+  $("go").textContent = tab === "image" ? "Convert" : "Generate";
+}
+
 document.querySelectorAll(".tab").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    currentTab = btn.dataset.tab;
-    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b === btn));
-    $("tab-text").classList.toggle("active", currentTab === "text");
-    $("tab-image").classList.toggle("active", currentTab === "image");
-    $("go").textContent = currentTab === "text" ? "Generate" : "Convert";
-  });
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 
-// Suggest a filename from the prompt as the user types.
+// Suggest a filename from the active prompt as the user types.
 $("prompt").addEventListener("input", (e) => suggestFilename(e.target.value));
+$("bg-prompt").addEventListener("input", (e) => suggestFilename(e.target.value));
 
 // --- File picking / drag-drop -------------------------------------------
 const dropzone = $("dropzone");
@@ -156,7 +166,7 @@ fetch("/api/health")
   .then((r) => r.json())
   .then((info) => {
     hostHasKey = !!info.host_key;
-    if (hostHasKey) $("host-key-note").classList.remove("hidden");
+    $("host-key-note").classList.toggle("hidden", currentTab === "image" || !hostHasKey);
     updateKeyStatus();
   })
   .catch(() => {});
@@ -165,34 +175,49 @@ fetch("/api/health")
 $("go").addEventListener("click", run);
 
 async function run() {
-  const size = $("size").value;
   const palette = $("palette").value;
   const colors = $("colors").value;
-  const removeBg = $("remove_bg").checked;
-  const fill = $("fill").checked;
 
   const form = new FormData();
-  form.append("size", size);
   form.append("palette", palette);
   form.append("colors", colors);
-  form.append("remove_bg", removeBg);
-  form.append("fill", fill);
 
   let url;
+  let statusMsg;
   if (currentTab === "text") {
     const prompt = $("prompt").value.trim();
     if (!prompt) return setStatus("Enter a subject first.", true);
     form.append("prompt", prompt);
+    form.append("size", $("size").value);
+    form.append("remove_bg", $("remove_bg").checked);
+    form.append("fill", $("fill").checked);
     form.append("api_key", apiKey);
     url = "/api/generate";
-  } else {
+    statusMsg = "Generating pixel art...";
+  } else if (currentTab === "image") {
     if (!selectedFile) return setStatus("Choose an image first.", true);
     form.append("file", selectedFile);
+    form.append("size", $("size").value);
+    form.append("remove_bg", $("remove_bg").checked);
+    form.append("fill", $("fill").checked);
     url = "/api/convert";
+    statusMsg = "Converting...";
+  } else {
+    const prompt = $("bg-prompt").value.trim();
+    if (!prompt) return setStatus("Enter a scene prompt first.", true);
+    form.append("prompt", prompt);
+    form.append("width", $("bg-width").value);
+    form.append("height", $("bg-height").value);
+    form.append("pixel_size", $("bg-pixel").value);
+    form.append("tileable", $("bg-tileable").checked);
+    form.append("tile_div", $("bg-tilediv").value);
+    form.append("api_key", apiKey);
+    url = "/api/background";
+    statusMsg = "Generating background...";
   }
 
   setBusy(true);
-  setStatus(currentTab === "text" ? "Generating pixel art..." : "Converting...");
+  setStatus(statusMsg);
   try {
     const resp = await fetch(url, { method: "POST", body: form });
     if (!resp.ok) {
@@ -200,7 +225,8 @@ async function run() {
       throw new Error(err.detail || "Request failed");
     }
     const data = await resp.json();
-    showResult(data, size);
+    if (currentTab === "background") showBackground(data);
+    else showSprite(data);
     setStatus("Done.");
   } catch (e) {
     setStatus(e.message, true);
@@ -216,20 +242,61 @@ function b64ToBlobUrl(b64) {
   return URL.createObjectURL(new Blob([arr], { type: "image/png" }));
 }
 
-function showResult(data, size) {
-  if (spriteUrl) URL.revokeObjectURL(spriteUrl);
-  if (previewUrl) URL.revokeObjectURL(previewUrl);
-  previewUrl = b64ToBlobUrl(data.preview_png);
-  spriteUrl = b64ToBlobUrl(data.sprite_png);
+// Render up to two download links; `displayUrl` is shown in the preview.
+function renderOutputs(displayUrl, outputs) {
+  currentOutputs.forEach((o) => URL.revokeObjectURL(o.url));
+  currentOutputs = outputs;
 
-  $("output").src = previewUrl;
-
-  lastSize = data.size;
-  $("download-sprite").href = spriteUrl;
-  $("download-preview").href = previewUrl;
+  $("output").src = displayUrl;
+  ["download-a", "download-b"].forEach((id, i) => {
+    const a = $(id);
+    if (i < outputs.length) {
+      a.href = outputs[i].url;
+      a.textContent = outputs[i].getLabel();
+      a.classList.remove("hidden");
+    } else {
+      a.classList.add("hidden");
+      a.removeAttribute("href");
+    }
+  });
   updateDownloadNames();
-
   $("result").classList.remove("hidden");
+}
+
+function showSprite(data) {
+  const previewUrl = b64ToBlobUrl(data.preview_png);
+  const spriteUrl = b64ToBlobUrl(data.sprite_png);
+  renderOutputs(previewUrl, [
+    {
+      url: spriteUrl,
+      getLabel: () => "Download sprite (true size, for LibreSprite)",
+      getName: (b) => `${b}_${data.size}x${data.size}.png`,
+    },
+    {
+      url: previewUrl,
+      getLabel: () => "Download large preview",
+      getName: (b) => `${b}_512.png`,
+    },
+  ]);
+}
+
+function showBackground(data) {
+  const bgUrl = b64ToBlobUrl(data.background_png);
+  const outputs = [
+    {
+      url: bgUrl,
+      getLabel: () => `Download background (${data.width}x${data.height})`,
+      getName: (b) => `${b}_${data.width}x${data.height}.png`,
+    },
+  ];
+  if (data.tile_png) {
+    outputs.push({
+      url: b64ToBlobUrl(data.tile_png),
+      getLabel: () => "Download seamless tile",
+      getName: (b) => `${b}_tile.png`,
+    });
+  }
+  renderOutputs(bgUrl, outputs);
 }
 
 function setStatus(msg, isError) {

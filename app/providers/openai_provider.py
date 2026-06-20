@@ -6,14 +6,24 @@ import base64
 from ..config import settings
 from .base import ImageProvider, ProviderError
 
-# OpenAI image API supports a fixed set of square sizes; we request the smallest
-# reasonable one and let the pixelation engine downscale to the target grid.
-_SUPPORTED_API_SIZES = ("1024x1024",)
-
-_PROMPT_TEMPLATE = (
-    "{subject}, retro 8-bit pixel art video game sprite, "
-    "limited color palette, crisp pixels, centered, flat solid background"
-)
+# Prompt styling + API image shape per generation style. The pixelation engine
+# downscales whatever the API returns, so we just pick a sensible aspect.
+_TEMPLATES = {
+    "sprite": (
+        "{subject}, retro 8-bit pixel art video game sprite, "
+        "limited color palette, crisp pixels, centered, flat solid background"
+    ),
+    "background": (
+        "{subject}, simple retro 16-bit pixel art video game background scene, "
+        "side-scroller backdrop, wide landscape, limited color palette, "
+        "smooth simple shapes with minimal clutter, no characters, no text, "
+        "even left-to-right composition suitable for seamless horizontal tiling"
+    ),
+}
+_SHAPES = {
+    "sprite": "1024x1024",
+    "background": "1536x1024",
+}
 
 
 class OpenAIProvider(ImageProvider):
@@ -32,16 +42,18 @@ class OpenAIProvider(ImageProvider):
         self._client = OpenAI(api_key=key)
         self._model = settings.openai_image_model
 
-    def generate(self, prompt: str, size: int = 512) -> bytes:
+    def generate(self, prompt: str, style: str = "sprite") -> bytes:
         clean = prompt.strip()
         if not clean:
             raise ProviderError("Prompt must not be empty.")
-        full_prompt = _PROMPT_TEMPLATE.format(subject=clean)
+        template = _TEMPLATES.get(style, _TEMPLATES["sprite"])
+        shape = _SHAPES.get(style, _SHAPES["sprite"])
+        full_prompt = template.format(subject=clean)
         try:
             result = self._client.images.generate(
                 model=self._model,
                 prompt=full_prompt,
-                size=_SUPPORTED_API_SIZES[0],
+                size=shape,
                 n=1,
             )
         except Exception as exc:  # noqa: BLE001 - surface any API error cleanly

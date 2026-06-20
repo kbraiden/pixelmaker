@@ -19,7 +19,7 @@ class ImageProvider(ABC):
     name: str = "base"
 
     @abstractmethod
-    def generate(self, prompt: str, size: int = 512) -> bytes:
+    def generate(self, prompt: str, style: str = "sprite") -> bytes:
         """Generate an image from a text prompt and return raw image bytes."""
         raise NotImplementedError
 

@@ -16,20 +16,13 @@
     <nav class="tabs">
       <button class="tab active" data-tab="text">From text</button>
       <button class="tab" data-tab="image">From image</button>
+      <button class="tab" data-tab="background">Background</button>
     </nav>
 
     <section id="tab-text" class="panel active">
       <label>Subject
         <input type="text" id="prompt" placeholder="alligator" />
       </label>
-      <div class="keyrow">
-        <button type="button" id="open-key" class="secondary">Set API key</button>
-        <span id="key-status" class="key-status">No key set</span>
-        <a href="/help.html" target="_blank" class="help-link">Need a key? Help &rarr;</a>
-      </div>
-      <p id="host-key-note" class="note hidden">
-        A key is already configured by the host &mdash; you can leave this blank.
-      </p>
     </section>
 
     <section id="tab-image" class="panel">
@@ -39,7 +32,23 @@
       </label>
     </section>
 
-    <div class="controls">
+    <section id="tab-background" class="panel">
+      <label>Scene / prompt
+        <input type="text" id="bg-prompt" placeholder="forest at dusk" />
+      </label>
+    </section>
+
+    <div class="keyrow" id="ai-key-row">
+      <button type="button" id="open-key" class="secondary">Set API key</button>
+      <span id="key-status" class="key-status">No key set</span>
+      <a href="/help.html" target="_blank" class="help-link">Need a key? Help &rarr;</a>
+    </div>
+    <p id="host-key-note" class="note hidden">
+      A key is already configured by the host &mdash; you can leave this blank.
+    </p>
+
+    <!-- Sprite / image-only controls -->
+    <div class="controls" id="sprite-controls">
       <label>Size
         <select id="size">
           <option value="16">16 x 16</option>
@@ -48,6 +57,45 @@
           <option value="128">128 x 128</option>
         </select>
       </label>
+      <label class="check">
+        <input type="checkbox" id="remove_bg" checked /> Transparent background
+      </label>
+      <label class="check">
+        <input type="checkbox" id="fill" checked /> Fill frame (auto-crop)
+      </label>
+    </div>
+
+    <!-- Background-only controls -->
+    <div class="controls hidden" id="bg-controls">
+      <label>Width
+        <input type="number" id="bg-width" min="256" max="3840" step="16" value="1280" />
+      </label>
+      <label>Height
+        <input type="number" id="bg-height" min="256" max="3840" step="16" value="720" />
+      </label>
+      <label>Pixel size
+        <select id="bg-pixel">
+          <option value="4">Fine (4)</option>
+          <option value="6">Medium (6)</option>
+          <option value="8" selected>Default (8)</option>
+          <option value="12">Chunky (12)</option>
+          <option value="16">Blocky (16)</option>
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="bg-tileable" checked /> Seamless horizontal tiling
+      </label>
+      <label class="wide">Tile width (when tiling)
+        <select id="bg-tilediv">
+          <option value="1" selected>Full width (unique)</option>
+          <option value="2">Half &mdash; repeat &times;2 (smaller tile)</option>
+          <option value="4">Quarter &mdash; repeat &times;4 (smallest tile)</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- Shared controls -->
+    <div class="controls" id="shared-controls">
       <label>Palette
         <select id="palette">
           <option value="adaptive" selected>Adaptive</option>
@@ -60,12 +108,6 @@
       <label>Colors
         <input type="number" id="colors" min="2" max="256" value="16" />
       </label>
-      <label class="check">
-        <input type="checkbox" id="remove_bg" checked /> Transparent background
-      </label>
-      <label class="check">
-        <input type="checkbox" id="fill" checked /> Fill frame (auto-crop)
-      </label>
       <label class="wide">File name
         <input type="text" id="filename" placeholder="pixelart" />
       </label>
@@ -77,8 +119,8 @@
     <div id="result" class="result hidden">
       <img id="output" alt="pixel art result" />
       <div class="downloads">
-        <a id="download-sprite" download="pixelart.png">Download sprite (true size, for LibreSprite)</a>
-        <a id="download-preview" download="pixelart_512.png">Download large preview</a>
+        <a id="download-a" download>Download</a>
+        <a id="download-b" download>Download</a>
       </div>
     </div>
   </main>

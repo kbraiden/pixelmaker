@@ -10,7 +10,17 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .palettes import palette_names
-from .pixelate import MAX_COLORS, MIN_COLORS, VALID_SIZES, pixelate
+from .pixelate import (
+    BG_MAX_DIM,
+    BG_MIN_DIM,
+    MAX_COLORS,
+    MIN_COLORS,
+    VALID_PIXEL_SIZES,
+    VALID_SIZES,
+    VALID_TILE_DIVS,
+    make_background,
+    pixelate,
+)
 from .providers import ProviderError, get_provider
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -109,6 +119,57 @@ async def convert(
     except Exception as exc:  # noqa: BLE001 - bad image -> 400
         raise HTTPException(400, f"could not process image: {exc}") from exc
     return _result_json(large_png, grid_png, size)
+
+
+@app.post("/api/background")
+def background(
+    prompt: str = Form(...),
+    width: int = Form(1280),
+    height: int = Form(720),
+    palette: str = Form("adaptive"),
+    colors: int = Form(24),
+    pixel_size: int = Form(8),
+    tileable: bool = Form(True),
+    tile_div: int = Form(1),
+    api_key: str = Form(""),
+) -> JSONResponse:
+    """Text -> simple pixel-art background via the configured AI provider."""
+    if palette not in palette_names():
+        raise HTTPException(400, f"palette must be one of {palette_names()}")
+    if not (MIN_COLORS <= colors <= MAX_COLORS):
+        raise HTTPException(400, f"colors must be between {MIN_COLORS} and {MAX_COLORS}")
+    if not (BG_MIN_DIM <= width <= BG_MAX_DIM and BG_MIN_DIM <= height <= BG_MAX_DIM):
+        raise HTTPException(400, f"width/height must be {BG_MIN_DIM}-{BG_MAX_DIM}")
+    if pixel_size not in VALID_PIXEL_SIZES:
+        raise HTTPException(400, f"pixel_size must be one of {list(VALID_PIXEL_SIZES)}")
+    if tile_div not in VALID_TILE_DIVS:
+        raise HTTPException(400, f"tile_div must be one of {list(VALID_TILE_DIVS)}")
+    if not prompt.strip():
+        raise HTTPException(400, "prompt must not be empty")
+
+    try:
+        provider = get_provider(api_key.strip() or None)
+        source = provider.generate(prompt, style="background")
+    except ProviderError as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+    bg_png, tile_png = make_background(
+        source,
+        width=width,
+        height=height,
+        palette=palette,
+        colors=colors,
+        pixel_size=pixel_size,
+        tileable=tileable,
+        tile_div=tile_div,
+    )
+    payload = {
+        "width": width,
+        "height": height,
+        "background_png": base64.b64encode(bg_png).decode("ascii"),
+        "tile_png": base64.b64encode(tile_png).decode("ascii") if tile_png else None,
+    }
+    return JSONResponse(payload)
 
 
 @app.get("/")

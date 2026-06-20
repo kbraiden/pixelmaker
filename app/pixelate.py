@@ -24,6 +24,14 @@ MIN_COLORS = 2
 MAX_COLORS = 256
 _WORK_MAX = 512  # cap working resolution for background/flood-fill cost
 
+# Background defaults / limits
+BG_DEFAULT_W = 1280
+BG_DEFAULT_H = 720
+BG_MIN_DIM = 256
+BG_MAX_DIM = 3840
+VALID_PIXEL_SIZES = (4, 6, 8, 12, 16)
+VALID_TILE_DIVS = (1, 2, 4)
+
 
 def _crop_to_square(img: Image.Image) -> Image.Image:
     """Center-crop the image to a square."""
@@ -203,3 +211,114 @@ def pixelate(
     large.save(large_buf, format="PNG")
 
     return large_buf.getvalue(), grid_buf.getvalue()
+
+
+def _cover_crop(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
+    """Center-crop the image to the target aspect ratio (cover, no distortion)."""
+    w, h = img.size
+    target_ratio = target_w / target_h
+    ratio = w / h
+    if ratio > target_ratio:  # too wide -> crop width
+        new_w = max(1, int(round(h * target_ratio)))
+        left = (w - new_w) // 2
+        return img.crop((left, 0, left + new_w, h))
+    new_h = max(1, int(round(w / target_ratio)))  # too tall -> crop height
+    top = (h - new_h) // 2
+    return img.crop((0, top, w, top + new_h))
+
+
+def _make_h_seamless(arr: np.ndarray) -> np.ndarray:
+    """Return a horizontally tileable version of a small RGB grid.
+
+    Doubles the tile and takes the middle crop so the new left/right edges are
+    adjacent columns of the original (continuous when tiled), then heals the
+    resulting central seam with a short linear cross-fade. Works well for the
+    simple, low-detail backgrounds this feature targets.
+    """
+    gh, gw, _ = arr.shape
+    doubled = np.concatenate([arr, arr], axis=1)
+    start = gw // 2
+    mid = doubled[:, start:start + gw].astype(np.float32)
+
+    center = gw // 2
+    band = max(2, gw // 6)
+    lo = max(1, center - band)
+    hi = min(gw - 1, center + band)
+    left_col = mid[:, lo - 1]
+    right_col = mid[:, hi]
+    span = hi - lo
+    for i in range(span):
+        a = (i + 1) / (span + 1)
+        mid[:, lo + i] = left_col * (1 - a) + right_col * a
+
+    return np.clip(mid, 0, 255).astype(np.uint8)
+
+
+def make_background(
+    image_bytes: bytes,
+    width: int = BG_DEFAULT_W,
+    height: int = BG_DEFAULT_H,
+    palette: str = "adaptive",
+    colors: int = 24,
+    pixel_size: int = 8,
+    tileable: bool = True,
+    tile_div: int = 1,
+) -> tuple[bytes, Optional[bytes]]:
+    """Turn a source image into a pixel-art background.
+
+    Args:
+        image_bytes: raw source image bytes.
+        width, height: final background size in pixels.
+        palette: "adaptive" or a named palette key.
+        colors: adaptive palette color count.
+        pixel_size: size of each art "pixel" block (larger = chunkier).
+        tileable: make the result repeat seamlessly left-to-right.
+        tile_div: when tileable, generate a tile 1/tile_div of the width and
+            repeat it across (1 = full-width unique, 2 = half, 4 = quarter).
+            Larger divisors give a smaller, reusable tile.
+
+    Returns:
+        (background_png_bytes, tile_png_bytes) where tile_png is the single
+        repeatable tile (only when tileable and tile_div > 1, else None).
+    """
+    width = max(BG_MIN_DIM, min(BG_MAX_DIM, int(width)))
+    height = max(BG_MIN_DIM, min(BG_MAX_DIM, int(height)))
+    pixel_size = max(2, int(pixel_size))
+    if tile_div not in VALID_TILE_DIVS:
+        tile_div = 1
+    if not tileable:
+        tile_div = 1
+
+    src = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+
+    gh = max(8, round(height / pixel_size))
+    tile_w = width // tile_div
+    gw = max(8, round(tile_w / pixel_size))
+
+    crop = _cover_crop(src, tile_w, height)
+    small = crop.resize((gw, gh), Image.Resampling.LANCZOS)
+
+    if tileable:
+        small = Image.fromarray(_make_h_seamless(np.asarray(small)), "RGB")
+
+    tile_q = _quantize(small, palette, colors)
+
+    if tile_div > 1:
+        full_grid = Image.new("RGB", (gw * tile_div, gh))
+        for i in range(tile_div):
+            full_grid.paste(tile_q, (i * gw, 0))
+    else:
+        full_grid = tile_q
+
+    bg = full_grid.resize((width, height), Image.Resampling.NEAREST)
+    bg_buf = io.BytesIO()
+    bg.save(bg_buf, format="PNG")
+
+    tile_bytes: Optional[bytes] = None
+    if tileable and tile_div > 1:
+        tile_img = tile_q.resize((tile_w, height), Image.Resampling.NEAREST)
+        tbuf = io.BytesIO()
+        tile_img.save(tbuf, format="PNG")
+        tile_bytes = tbuf.getvalue()
+
+    return bg_buf.getvalue(), tile_bytes

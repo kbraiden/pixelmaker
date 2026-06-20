@@ -14,6 +14,9 @@ Two modes:
   a retro sprite, which is then pixelated/quantized locally. Requires an OpenAI API key.
 - **From image** — upload a photo and convert it to pixel art entirely locally
   (downscale + palette quantization). No API key or network required.
+- **Background** — type a scene (e.g. `forest at dusk`) and generate a simple pixel-art
+  background (default **1280×720**) via AI. Optionally make it **seamlessly tile
+  horizontally**, and generate a smaller repeatable tile (½ or ¼ width) to reduce size.
 
 ## Screenshots
 
@@ -128,6 +131,7 @@ key** — you don't pay for their images:
 | `/api/health` | GET | Status + whether AI is enabled |
 | `/api/generate` | POST (form: `prompt`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Text → pixel art |
 | `/api/convert` | POST (multipart: `file`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Image → pixel art |
+| `/api/background` | POST (form: `prompt`, `width`, `height`, `pixel_size`, `palette`, `colors`, `tileable`, `tile_div`) | Text → pixel-art background |
 
 Both image endpoints return JSON: `{ "size", "preview_png", "sprite_png" }`, where the
 two PNG fields are base64-encoded. `preview_png` is a large (512px) crisp upscale for
