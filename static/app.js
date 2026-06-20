@@ -63,11 +63,15 @@ async function run() {
   const size = $("size").value;
   const palette = $("palette").value;
   const colors = $("colors").value;
+  const removeBg = $("remove_bg").checked;
+  const fill = $("fill").checked;
 
   const form = new FormData();
   form.append("size", size);
   form.append("palette", palette);
   form.append("colors", colors);
+  form.append("remove_bg", removeBg);
+  form.append("fill", fill);
 
   let url;
   if (currentTab === "text") {

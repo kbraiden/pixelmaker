@@ -57,6 +57,8 @@ def generate(
     size: int = Form(32),
     palette: str = Form("adaptive"),
     colors: int = Form(16),
+    remove_bg: bool = Form(True),
+    fill: bool = Form(True),
 ) -> JSONResponse:
     """Text -> pixel art via the configured AI provider."""
     _validate_params(size, palette, colors)
@@ -68,7 +70,14 @@ def generate(
     except ProviderError as exc:
         raise HTTPException(503, str(exc)) from exc
 
-    large_png, grid_png = pixelate(source, size=size, palette=palette, colors=colors)
+    large_png, grid_png = pixelate(
+        source,
+        size=size,
+        palette=palette,
+        colors=colors,
+        remove_bg=remove_bg,
+        fill=fill,
+    )
     return _result_json(large_png, grid_png, size)
 
 
@@ -78,6 +87,8 @@ async def convert(
     size: int = Form(32),
     palette: str = Form("adaptive"),
     colors: int = Form(16),
+    remove_bg: bool = Form(True),
+    fill: bool = Form(True),
 ) -> JSONResponse:
     """Uploaded image -> pixel art (fully local, no AI)."""
     _validate_params(size, palette, colors)
@@ -85,7 +96,14 @@ async def convert(
     if not raw:
         raise HTTPException(400, "uploaded file is empty")
     try:
-        large_png, grid_png = pixelate(raw, size=size, palette=palette, colors=colors)
+        large_png, grid_png = pixelate(
+            raw,
+            size=size,
+            palette=palette,
+            colors=colors,
+            remove_bg=remove_bg,
+            fill=fill,
+        )
     except Exception as exc:  # noqa: BLE001 - bad image -> 400
         raise HTTPException(400, f"could not process image: {exc}") from exc
     return _result_json(large_png, grid_png, size)

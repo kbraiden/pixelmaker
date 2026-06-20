@@ -13,14 +13,18 @@ Two modes:
 
 The core engine (`app/pixelate.py`) is the same for both modes:
 
-1. Center-crop to a square.
-2. Downscale to a small grid (16/32/64/128, default **32×32**).
-3. Quantize colors — either an **adaptive** palette (choose color count) or a fixed
-   retro palette (**NES**, **Game Boy**, **CGA**, **PICO-8**).
-4. Upscale back with nearest-neighbor sampling so pixels stay crisp.
+1. **Remove background** (optional): detect the flat border color and flood-fill it to
+   transparency, so the subject sits on a transparent background.
+2. **Fill frame** (optional): trim to the subject's bounding box and pad to a square so it
+   fills the grid edge-to-edge (no wasted blank space; aspect ratio preserved).
+3. Downscale to a small grid (16/32/64/128, default **32×32**).
+4. Quantize colors — either an **adaptive** palette (choose color count) or a fixed
+   retro palette (**NES**, **Game Boy**, **CGA**, **PICO-8**). Alpha is preserved.
+5. Upscale back with nearest-neighbor sampling so pixels stay crisp.
 
-The AI layer (`app/providers/`) is pluggable behind an `ImageProvider` interface, so a
-local model could be added later without touching the API or UI.
+Both options are on by default and exposed as checkboxes in the UI
+("Transparent background" and "Fill frame"). The exported sprite PNG is RGBA, so the
+transparency carries straight into LibreSprite/Aseprite.
 
 ## Setup
 
@@ -52,8 +56,8 @@ Open http://127.0.0.1:8000 in your browser.
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/health` | GET | Status + whether AI is enabled |
-| `/api/generate` | POST (form: `prompt`, `size`, `palette`, `colors`) | Text → pixel art |
-| `/api/convert` | POST (multipart: `file`, `size`, `palette`, `colors`) | Image → pixel art |
+| `/api/generate` | POST (form: `prompt`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Text → pixel art |
+| `/api/convert` | POST (multipart: `file`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Image → pixel art |
 
 Both image endpoints return JSON: `{ "size", "preview_png", "sprite_png" }`, where the
 two PNG fields are base64-encoded. `preview_png` is a large (512px) crisp upscale for
