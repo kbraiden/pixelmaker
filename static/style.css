@@ -117,7 +117,7 @@ input[type="text"], input[type="number"], select {
 
 .status { margin-top: 1rem; min-height: 1.2rem; color: var(--accent2); }
 .warning { color: #ffcc66; font-size: 0.85rem; }
-.hidden { display: none; }
+.hidden { display: none !important; }
 
 .result {
   margin-top: 1rem;
@@ -283,3 +283,52 @@ footer a:hover { color: var(--accent2); text-decoration: underline; }
 }
 
 .downloads a + a { background: var(--muted); color: var(--text); }
+
+/* --- Walk cycle preview --- */
+#walk-canvas {
+  image-rendering: pixelated;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background-color: #0d0b14;
+  background-image:
+    linear-gradient(45deg, #2a2640 25%, transparent 25%),
+    linear-gradient(-45deg, #2a2640 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2a2640 75%),
+    linear-gradient(-45deg, transparent 75%, #2a2640 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.walk-playbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 0.7rem;
+}
+
+#iso-output {
+  width: 100%;
+  max-width: 512px;
+  image-rendering: pixelated;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  background-color: #0d0b14;
+}
+
+.variants {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 0.2rem;
+}
+
+.rangeval {
+  display: inline-block;
+  margin-left: 0.4rem;
+  color: var(--accent2);
+  font-size: 0.8rem;
+}

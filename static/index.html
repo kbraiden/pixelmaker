@@ -17,6 +17,8 @@
       <button class="tab active" data-tab="text">From text</button>
       <button class="tab" data-tab="image">From image</button>
       <button class="tab" data-tab="background">Background</button>
+      <button class="tab" data-tab="walk">Animate</button>
+      <button class="tab" data-tab="iso">Isometric</button>
     </nav>
 
     <section id="tab-text" class="panel active">
@@ -36,6 +38,17 @@
       <label>Scene / prompt
         <input type="text" id="bg-prompt" placeholder="forest at dusk" />
       </label>
+    </section>
+
+    <section id="tab-walk" class="panel">
+      <label class="dropzone" id="walk-dropzone">
+        <input type="file" id="walk-file" accept="image/*" hidden />
+        <span id="walk-file-label">Click or drop a sprite to animate</span>
+      </label>
+      <p class="note">
+        Use a true-size sprite (e.g. a 32&times;32 from the other tabs). Animations
+        are generated locally &mdash; no API key needed.
+      </p>
     </section>
 
     <div class="keyrow" id="ai-key-row">
@@ -94,6 +107,63 @@
       </label>
     </div>
 
+    <!-- Walk-cycle-only controls -->
+    <div class="controls hidden" id="walk-controls">
+      <label>Action
+        <select id="walk-action">
+          <option value="walk" selected>Walk</option>
+          <option value="idle">Idle (breathing)</option>
+          <option value="jump">Jump</option>
+          <option value="attack">Attack</option>
+        </select>
+      </label>
+      <label id="walk-frames-label">Frames
+        <select id="walk-frames">
+          <option value="4">4 (simple)</option>
+          <option value="6" selected>6 (smooth)</option>
+        </select>
+      </label>
+      <label>Speed
+        <input type="range" id="walk-speed" min="40" max="400" step="10" value="120" />
+        <span id="walk-speed-val" class="rangeval">120 ms</span>
+      </label>
+      <label class="wide">File name
+        <input type="text" id="walk-filename" placeholder="walk" />
+      </label>
+      <button id="walk-go">Animate</button>
+    </div>
+
+    <section id="tab-iso" class="panel">
+      <label>Tile material
+        <input type="text" id="iso-prompt" placeholder="grass" />
+      </label>
+      <label>Side material <span class="note">(optional &mdash; e.g. dirt; blank = darker top)</span>
+        <input type="text" id="iso-side-prompt" placeholder="dirt" />
+      </label>
+    </section>
+
+    <!-- Isometric-only controls -->
+    <div class="controls hidden" id="iso-controls">
+      <label>Tile size
+        <select id="iso-size">
+          <option value="32">32 &times; 16</option>
+          <option value="64" selected>64 &times; 32</option>
+          <option value="128">128 &times; 64</option>
+        </select>
+      </label>
+      <label class="wide">Height variants
+        <span class="variants">
+          <label class="check"><input type="checkbox" id="iso-full" checked /> Full</label>
+          <label class="check"><input type="checkbox" id="iso-half" checked /> Half</label>
+          <label class="check"><input type="checkbox" id="iso-quarter" checked /> Quarter</label>
+          <label class="check"><input type="checkbox" id="iso-slab" checked /> Slab</label>
+        </span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="iso-rim" checked /> Top-material rim (overhang lip)
+      </label>
+    </div>
+
     <!-- Shared controls -->
     <div class="controls" id="shared-controls">
       <label>Palette
@@ -121,6 +191,24 @@
       <div class="downloads">
         <a id="download-a" download>Download</a>
         <a id="download-b" download>Download</a>
+      </div>
+      <button type="button" id="animate-this" class="secondary hidden">Animate this &#9654;</button>
+    </div>
+
+    <div id="iso-result" class="result hidden">
+      <img id="iso-output" alt="isometric tileset preview" />
+      <div class="downloads" id="iso-downloads"></div>
+    </div>
+
+    <div id="walk-result" class="result hidden">
+      <canvas id="walk-canvas" width="256" height="256" aria-label="walk cycle preview"></canvas>
+      <div class="walk-playbar">
+        <button type="button" id="walk-playpause" class="secondary">Pause</button>
+        <span id="walk-frame-info" class="note"></span>
+      </div>
+      <div class="downloads">
+        <a id="walk-download-sheet" download>Download sprite sheet</a>
+        <a id="walk-download-gif" download>Download animated GIF</a>
       </div>
     </div>
   </main>

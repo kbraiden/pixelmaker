@@ -19,10 +19,17 @@ _TEMPLATES = {
         "smooth simple shapes with minimal clutter, no characters, no text, "
         "even left-to-right composition suitable for seamless horizontal tiling"
     ),
+    "texture": (
+        "{subject}, seamless top-down flat pixel-art material texture, "
+        "repeating tileable pattern viewed straight from above, no perspective, "
+        "no objects, no shadows, even flat lighting, limited color palette, "
+        "fills the entire frame edge to edge"
+    ),
 }
 _SHAPES = {
     "sprite": "1024x1024",
     "background": "1536x1024",
+    "texture": "1024x1024",
 }
 
 

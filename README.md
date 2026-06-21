@@ -17,6 +17,12 @@ Two modes:
 - **Background** — type a scene (e.g. `forest at dusk`) and generate a simple pixel-art
   background (default **1280×720**) via AI. Optionally make it **seamlessly tile
   horizontally**, and generate a smaller repeatable tile (½ or ¼ width) to reduce size.
+- **Walk cycle** — upload a true-size sprite and generate looping animations
+  (walk, idle, jump, attack) entirely locally (no API key). Preview them live in the
+  browser, then download a sprite sheet (for LibreSprite/Aseprite) and an animated GIF.
+- **Isometric** — type a material (e.g. `grass`) and generate a clean **2:1 isometric
+  tile** plus **full / half / quarter / slab** height variants in the same style.
+  Exports individual tiles, a packed atlas, and a ready-to-import **Godot 4 TileSet**.
 
 ## Screenshots
 
@@ -26,6 +32,13 @@ Two modes:
 
 Generate from a word, pick size/palette/colors, get a transparent, frame-filling sprite
 plus a true-size download for LibreSprite/Aseprite.
+
+| Animate (walk / idle / jump / attack) | Isometric tiles |
+|----------|--------|
+| ![Animate tab with a live walk-cycle preview](docs/screenshot-animate.png) | ![Isometric tab generating a 2:1 grass tileset](docs/screenshot-isometric.png) |
+
+Turn a single sprite into a looping animation previewed live in the browser, or snap an
+AI texture onto clean 2:1 isometric geometry to build a Godot-ready tileset.
 
 ## Quick start
 
@@ -132,6 +145,8 @@ key** — you don't pay for their images:
 | `/api/generate` | POST (form: `prompt`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Text → pixel art |
 | `/api/convert` | POST (multipart: `file`, `size`, `palette`, `colors`, `remove_bg`, `fill`) | Image → pixel art |
 | `/api/background` | POST (form: `prompt`, `width`, `height`, `pixel_size`, `palette`, `colors`, `tileable`, `tile_div`) | Text → pixel-art background |
+| `/api/walk` | POST (multipart: `file`, `action`, `frames`, `fps_ms`) | Sprite → animation (walk/idle/jump/attack): frames + sheet + GIF |
+| `/api/isometric` | POST (form: `prompt`, `side_prompt`, `width`, `palette`, `colors`, `variants`, `rim`, `name`) | Text → 2:1 isometric tileset zip (tiles + atlas + Godot `.tres`) |
 
 The `/api/generate` and `/api/convert` endpoints return JSON:
 `{ "size", "preview_png", "sprite_png" }`, where the two PNG fields are base64-encoded.
@@ -176,6 +191,72 @@ tile** button alongside **Download background**. Backgrounds are flat (no transp
 and best suited to simple, low-detail scenes — that's what the AI prompt is tuned for
 (no characters, no text, even left-to-right composition).
 
+## Animate (walk / idle / jump / attack)
+
+![Walk-cycle animation of a pixel rat](docs/feature-animate.gif)
+
+The **Animate** tab turns a single sprite into a looping animation, **entirely
+locally** (no AI / API key). Upload a true-size sprite (e.g. a 32×32 exported from
+the other tabs), pick an **Action**, set the playback **speed**, and click
+**Animate**. You can also jump straight here from a generated/converted sprite: the
+result panel shows an **Animate this ▶** button that sends the true-size sprite to
+this tab and animates it in one click.
+
+Actions (all procedural, from one static sprite — see `app/animations.py`):
+
+- **Walk** — looping march; choose **4 frames** (simple) or **6 frames** (smooth).
+- **Idle** — gentle breathing bob.
+- **Jump** — crouch (squash) → launch (stretch) → airborne (rise + feet tuck) → land.
+- **Attack** — anticipation → lunge/swing forward → recover (carries a held weapon
+  through the arc, e.g. a character holding a sword).
+
+The engine finds the sprite's bounding box, treats the bottom band as the feet, and
+shifts / squashes / shears those regions per frame. Canvases are auto-padded so a hat
+at the top edge, an upward jump, or a forward lunge never clips.
+
+The result panel plays the animation **live on a canvas** (crisp nearest-neighbour,
+with play/pause and a speed slider) and offers two downloads:
+
+- **Download sprite sheet** — a horizontal strip of the frames at true size. Import it
+  in LibreSprite/Aseprite via *File → Import Sprite Sheet* (Horizontal Strip).
+- **Download animated GIF** — an upscaled preview for sharing.
+
+> Animations move *existing* pixels, so they can't invent an unseen viewing angle.
+> New actions in the sprite's own view (walk, idle, jump, attack) work from one image;
+> back / side / isometric directions need a sprite drawn for each direction.
+
+## Isometric tiles
+
+![Isometric grass tileset: full, half, quarter and slab heights](docs/feature-isometric.png)
+
+The **Isometric** tab generates clean, game-ready **2:1 isometric tiles** for level
+design. Type a material (e.g. `grass`, `stone`, `sand`), optionally a **side material**
+(e.g. `dirt`), pick a **tile size** (32×16, 64×32, 128×64) and which **height variants**
+to produce, then **Generate**.
+
+How it works (`app/isometric.py`): the AI supplies a flat top-down *texture*, which is
+**projected onto an exact diamond mask** — so edges are pixel-perfect and tiles snap
+together seamlessly (unlike a raw AI tile, whose organic edges won't tile). The diamond
+is extruded straight down for the cube's side faces (shaded left/right for ambient
+occlusion). An optional **top-material rim** wraps the top texture a few pixels down
+over the sides (the "grass overhang" lip), following the diamond edge. Height variants
+(**full / half / quarter / slab**) change only the extrusion depth, so every tile shares
+the identical diamond top and lines up on one grid. Colours are quantized to the chosen
+palette for a consistent retro look.
+
+Exports — one click downloads a single **`<name>.zip`** containing a folder with
+everything:
+
+- **Individual tile PNGs** (one per height variant).
+- **Atlas PNG** — a uniform grid, each tile bottom-centre anchored.
+- **Godot 4 `.tres` TileSet** — pre-set to Isometric shape, `tile_size = W×W/2`, with the
+  atlas wired up. Drop the unzipped folder into your project root, then assign the
+  `.tres` to a `TileMapLayer` (enable Y-Sort for depth).
+- **Import-notes** text file listing the exact values for manual setup.
+
+> Phase 1 covers the base cube + height variants. Steps/stairs, cliffs, material
+> edge/corner autotiles, and slopes are natural follow-ons.
+
 ## Tests
 
 ```powershell
@@ -183,7 +264,8 @@ pip install pytest
 pytest
 ```
 
-Tests cover the pixelation engine and palettes offline (no network/AI).
+Tests cover the pixelation engine, palettes, the animation system (walk/idle/
+jump/attack), and the isometric tile generator offline (no network/AI).
 
 ## Notes
 
